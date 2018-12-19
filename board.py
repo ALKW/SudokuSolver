@@ -421,11 +421,11 @@ EASY_PUZZLE = [
 ]
 
 test = Board()
-test.copy_board_from(HARD_PUZZLE)
+test.copy_board_from(MEDIUM_PUZZLE)
 
 test.print_board()
 
-print("Solving\n")
+print("Solving Guarenteed Positions\n")
 
 test.solve_upto_guarenteed()
 
