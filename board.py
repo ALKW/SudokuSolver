@@ -161,7 +161,7 @@ class Board:
         self.row_eight = self.board[63:72]
         self.row_nine = self.board[72:]
         #Assigns all the rows to the list
-        self.rows = [self.row_one, self.row_two, self.row_three, self.row_four, self.row_five, self.row_six, self.row_seven, self.row_eight, self.row_eight]
+        self.rows = [self.row_one, self.row_two, self.row_three, self.row_four, self.row_five, self.row_six, self.row_seven, self.row_eight, self.row_nine]
         #Updates all the columns
         self.column_one = self.board[::9]
         self.column_two = self.board[1::9]
@@ -248,9 +248,6 @@ class Board:
         Returns:
             None
         '''
-        print()
-        self.print_board()
-        print()
         self.clear_sets()
         was_updated = False
         updated_during_filling = False
@@ -260,7 +257,8 @@ class Board:
             for sq_index in range(len(self.sudosquares)):
                 #Find all places the current number can be had at based on the current board
                 #Update possible values member in each entry
-                updated_during_filling = self.fill_in_poss_value(sq_index, number)
+                if self.fill_in_poss_value(sq_index, number):
+                    updated_during_filling = True
 
         #after going through all values and filling in all poss_value members for each Sudoentry, determine if anything can be written
         was_updated = self.write_if_possible()
@@ -300,14 +298,13 @@ class Board:
             else:
                 if self.is_valid(value, sq_index, entry_index):
                     added.append(entry_index)
-                    sudosquare.square[entry_index].poss_values.add(value)
+                    self.sudosquares[sq_index].square[entry_index].poss_values.add(value)
 
         #if the count is 1 then only 1 got filled in and that means a value can only go in 1 spot in the square, meaning it is valid
         if len(added) == 1:
             board_index = self.sudosquares[sq_index].indices[added[ONLY_ELEMENT]]
             self.board[board_index].value = value
             self.update_board_pieces_from_board()
-            print("added because only possible place: ", value, " | Square: ", sq_index + 1)
             return True
         else:
             return False
@@ -424,18 +421,17 @@ EASY_PUZZLE = [
 ]
 
 test = Board()
-test.copy_board_from(EASY_PUZZLE)
+test.copy_board_from(HARD_PUZZLE)
 
 test.print_board()
 
-print("Solving\n\n")
+print("Solving\n")
 
 test.solve_upto_guarenteed()
 
 test.print_board()
 
-for entry in test.board:
-    print(entry.poss_values)
+print("Solved As Much As Possible")
 
 
 
