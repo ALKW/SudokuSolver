@@ -87,26 +87,17 @@ class Sudosquare:
         '''
         #prints the first row
         for entry in self.square[:3]:
-            if entry.value < 10:
-                print(entry.value, "  ", end="")
-            else:
-                print(entry.value, " ", end="")
+            print(entry.poss_values, "  ", end="")
         print()
 
         #prints the second row
         for entry in self.square[3:6]:
-            if entry.value < 10:
-                print(entry.value, "  ", end="")
-            else:
-                print(entry.value, " ", end="")
+            print(entry.poss_values, "  ", end="")
         print()
 
         #prints the third row
         for entry in self.square[6:]:
-            if entry.value < 10:
-                print(entry.value, "  ", end="")
-            else:
-                print(entry.value, " ", end="")
+            print(entry.poss_values, "  ", end="")
         print("\n")
 
 class Board:
@@ -128,9 +119,37 @@ class Board:
         self.board = [Sudoentry(x * 0, (x // 9) % 9, x % 9) for x in range(81)]
         self.update_board_pieces_from_board()
         
+    def is_valid_board(self):
+        added = set()
+        for column in self.columns:
+            added = set()
+            for entry in column:
+                if entry.value in added:
+                    print("Invalid Board. Duplicate in column: ", self.columns.index(column))
+                    return False
+                added.add(entry.value)
+        for row in self.rows:
+            added = set()
+            for entry in row:
+                if entry.value in added:
+                    print("Invalid Board. Duplicate in row: ", self.rows.index(row))
+                    return False
+                added.add(entry.value)
+
+        for sudosquare in self.sudosquares:
+            added = set()
+            for entry in sudosquare.square:
+                if entry.value in added:
+                    print("Invalid Board. Duplicate in square: ", self.sudosquares.index(sudosquare))
+                    return False
+                added.add(entry.value)
+        
+        print("Valid Board")
+        return True
+
     def update_board_pieces_from_board(self):
         '''
-        Updates all the squares, columns, and rows lists based on the current board.  
+        Updates all the squares, columns, and rows lists based on the current board. As well as updates all possible value sets in board
         Args:
             None
         Returns:
@@ -138,6 +157,10 @@ class Board:
         Raises:
             None
         '''
+        #Fix possible value sets
+        for entry in self.board:
+            if entry.value != 0:
+                entry.poss_values = set([entry.value])
         #Updates all the squares
         self.square_one = Sudosquare(self.board[0:3] + self.board[9:12] +  self.board[18:21], [0,1,2,9,10,11,18,19,20])
         self.square_two = Sudosquare(self.board[3:6] + self.board[12:15] + self.board[21:24], [3,4,5,12,13,14,21,22,23])
@@ -175,7 +198,7 @@ class Board:
         #Assigns all the columns to the list
         self.columns = [self.column_one, self.column_two, self.column_three, self.column_four, self.column_five, self.column_six, self.column_seven, self.column_eight, self.column_nine]
 
-    def validate_board(self):
+    def fix_board(self):
         '''
         Determines if every entry in the table is a Sudoentry
         If an entry is any other type, a Sudoentry with value 0 is
@@ -203,7 +226,7 @@ class Board:
 
     def clear_sets(self):
         for entry_index in range(len(self.board)):
-            if len(self.board[entry_index].poss_values) != 1:
+            if self.board[entry_index].value == 0:
                 self.board[entry_index].poss_values = set()
 
     def copy_board_from(self, toCopy):
@@ -372,7 +395,7 @@ class Board:
             None
         '''
         count = 1
-        self.validate_board()
+        self.fix_board()
 
         for entry in self.board:
             print(entry.value, " ", end="")
@@ -422,17 +445,13 @@ EASY_PUZZLE = [
 
 test = Board()
 test.copy_board_from(MEDIUM_PUZZLE)
-
 test.print_board()
-
-print("Solving Guarenteed Positions\n")
-
+print("Solving")
 test.solve_upto_guarenteed()
-
 test.print_board()
-
-print("Solved As Much As Possible")
-
-
+for square in test.sudosquares:
+    square.print()
+    
+test.is_valid_board()
 
 
