@@ -161,6 +161,7 @@ class Board:
         for entry in self.board:
             if entry.value != 0:
                 entry.poss_values = set([entry.value])
+
         #Updates all the squares
         self.square_one = Sudosquare(self.board[0:3] + self.board[9:12] +  self.board[18:21], [0,1,2,9,10,11,18,19,20])
         self.square_two = Sudosquare(self.board[3:6] + self.board[12:15] + self.board[21:24], [3,4,5,12,13,14,21,22,23])
@@ -173,6 +174,7 @@ class Board:
         self.square_nine = Sudosquare(self.board[60:63] + self.board[69:72] + self.board[78:], [60,61,62,69,70,71,78,79,80])
         #Assigns all the squares to the list
         self.sudosquares = [self.square_one, self.square_two, self.square_three, self.square_four, self.square_five, self.square_six, self.square_seven, self.square_eight, self.square_nine]
+        
         #Updates all the rows
         self.row_one = self.board[:9]
         self.row_two = self.board[9:18]
@@ -185,6 +187,7 @@ class Board:
         self.row_nine = self.board[72:]
         #Assigns all the rows to the list
         self.rows = [self.row_one, self.row_two, self.row_three, self.row_four, self.row_five, self.row_six, self.row_seven, self.row_eight, self.row_nine]
+        
         #Updates all the columns
         self.column_one = self.board[::9]
         self.column_two = self.board[1::9]
@@ -257,6 +260,29 @@ class Board:
                         self.board[index].poss_values = set([toCopy[index]])
                     else:
                         self.board[index].poss_values = set()
+
+    def guess(self):
+        '''
+        Fills in a spot randomly with a number that is valid.
+        Args:
+            None
+        Raises:
+            None
+        Returns:
+            None
+        '''
+        #for each square in a board
+        for square_index in range(len(self.sudosquares)):
+            #Find the next square that supports a valid entry
+            for entry in self.sudosquares[square_index].square:
+                #If a square has a possible value, set it to that value
+                for pos in entry.poss_values:
+                    if pos == entry.value:
+                        continue
+                    print(entry.value)
+                    entry.value = pos
+                    self.update_board_pieces_from_board()
+                    return
 
     def solve_upto_guarenteed(self):
         '''
@@ -398,7 +424,10 @@ class Board:
         self.fix_board()
 
         for entry in self.board:
-            print(entry.value, " ", end="")
+            if entry.value == 0:
+                print("_", " ", end="")  
+            else:  
+                print(entry.value, " ", end="")
             if count % 3 == 0:
                 print("| ", end="")
             if count % 9 == 0:
@@ -409,15 +438,15 @@ class Board:
             
 
 HARD_PUZZLE = [
-0,0,0,3,0,0,0,4,0,
-8,0,0,0,0,1,0,0,7,
-2,6,3,0,0,0,0,0,8,
-0,0,0,0,1,0,4,6,0,
-0,0,0,9,0,3,0,0,0,
-0,2,5,0,6,0,0,0,0,
-7,0,0,0,0,0,1,3,2,
-5,0,0,8,0,0,0,0,6,
-0,3,0,0,0,7,0,0,0]
+0,7,0,0,0,0,0,0,9,
+3,9,0,0,0,1,0,6,0,
+1,0,0,0,0,0,0,0,0,
+0,3,0,6,0,8,9,0,7,
+0,0,0,5,0,7,0,0,0,
+7,0,6,9,0,2,0,8,0,
+0,0,0,0,0,0,0,0,6,
+0,5,0,8,0,0,0,2,3,
+8,0,0,0,0,0,0,4,0]
 
 MEDIUM_PUZZLE = [
 5,6,0,0,0,0,9,0,4,
@@ -443,15 +472,30 @@ EASY_PUZZLE = [
 6,0,0,0,2,0,3,0,0
 ]
 
-test = Board()
-test.copy_board_from(MEDIUM_PUZZLE)
-test.print_board()
-print("Solving")
-test.solve_upto_guarenteed()
-test.print_board()
-for square in test.sudosquares:
-    square.print()
-    
-test.is_valid_board()
+currBoard = Board()
+prevBoard = currBoard
 
+currBoard.copy_board_from(HARD_PUZZLE)
 
+print("Initial Board")
+currBoard.print_board()
+
+#Solve until we have to guess
+print("\nSolving")
+currBoard.solve_upto_guarenteed()
+
+while(not currBoard.is_valid_board()):
+    print("Guessing")
+
+    #Guess the next spot to print
+    prevBoard = currBoard
+    currBoard.guess()
+
+    #Solve until we have to guess
+    currBoard.solve_upto_guarenteed()
+
+    #If we werent able to solve it
+    if
+
+print("\nSolved Board")
+currBoard.print_board()
