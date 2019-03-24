@@ -358,6 +358,72 @@ class Board:
         else:
             return False
 
+    def correct(self, solved_puzzle):
+        #Morph the solved solution to what we currently have
+        solved_puzzle = self.morph_solved_init(solved_puzzle)
+
+        #make sure the number line up with the possible values
+        solved_puzzle = self.morph_solved_poss_values(solved_puzzle)
+
+        #Find errors and swap them
+        
+
+        #Print details to user
+        print("Morphed:")
+        print_matrix_as_board(solved_puzzle)
+
+
+    def morph_solved_init(self, solved_puzzle):
+        #For each 3x3 square in the board
+        for sudosquare in self.sudosquares:
+            #for each entry in the square
+            for entry in sudosquare.square:
+                #Get the position in the 1d array
+                position = entry.row * 9 + entry.column
+                
+                #If the position in the solved array and the puzzle are different, then find the corresponding position to swap with it
+                if solved_puzzle[position] != entry.value and entry.value != 0:
+                    #Find the piece that we need to swap with
+                    for swap_with in sudosquare.square:
+                        #compute the position in the 1d array
+                        swap_position = swap_with.row * 9 + swap_with.column
+
+                        #Once we find the number thats supposed to go there, swap them
+                        if solved_puzzle[swap_position] == entry.value:
+                            #Swap the values
+                            temp = solved_puzzle[swap_position]
+                            solved_puzzle[swap_position] = solved_puzzle[position]
+                            solved_puzzle[position] = temp
+                            break
+
+        return solved_puzzle
+    
+    def morph_solved_poss_values(self, solved_puzzle):
+        #For each 3x3 square in the board
+        for sudosquare in self.sudosquares:
+            #for each entry in the square
+            for entry in sudosquare.square:
+                #Get the position in the 1d array
+                position = entry.row * 9 + entry.column
+                
+                #If the position in the solved array is not in the poss_values set for that positiont
+                #then find the corresponding position to swap with it
+                if solved_puzzle[position] not in entry.poss_values and entry.value == 0:
+                    #Find the piece that we need to swap with
+                    for swap_with in sudosquare.square:
+                        #compute the position in the 1d array
+                        swap_position = swap_with.row * 9 + swap_with.column
+
+                        #Once we find the number thats supposed to go there, swap them
+                        if solved_puzzle[position] in swap_with.poss_values and solved_puzzle[swap_position] in entry.poss_values:
+                            #Swap the values
+                            temp = solved_puzzle[swap_position]
+                            solved_puzzle[swap_position] = solved_puzzle[position]
+                            solved_puzzle[position] = temp
+                            break
+
+        return solved_puzzle
+
     def is_valid(self, value, sq_index, entry_index):
         '''
         Determines if a value is able to be added to the possible value list of an entry
@@ -435,6 +501,51 @@ class Board:
             if count % 27 == 0:
                 print("-------------------------------|")
             count += 1
+
+    def print_board_detailed(self):
+        '''
+        Formats and prints the contents of the board 
+        Args:
+            None
+        Raises:
+            None
+        Returns:
+            None
+        '''
+        count = 1
+        self.fix_board()
+
+        for entry in self.board:
+            if entry.value == 0:
+                print("(", end="")
+                for value in entry.poss_values:
+                    print(value, " ", end="")  
+                print(") ", end="")
+            else:  
+                print(entry.value, " ", end="")
+            if count % 3 == 0:
+                print(" \t\t|| ", end="")
+            if count % 9 == 0:
+                print()
+            if count % 27 == 0:
+                print("")
+            count += 1
+
+def print_matrix_as_board(puzzle):
+    count = 1
+    for entry in puzzle:
+        if entry == 0:
+            print("_", " ", end="")  
+        else:  
+            print(entry, " ", end="")
+        if count % 3 == 0:
+            print("| ", end="")
+        if count % 9 == 0:
+            print()
+        if count % 27 == 0:
+            print("-------------------------------|")
+        count += 1
+    print()
             
 
 HARD_PUZZLE = [
@@ -472,6 +583,30 @@ EASY_PUZZLE = [
 6,0,0,0,2,0,3,0,0
 ]
 
+SOLVED_PUZZLE = [
+9, 4, 6, 5 ,7, 8, 1, 3, 2,
+2, 7, 1, 6, 3, 9, 8, 5, 4,
+5, 3, 8, 2, 4, 1, 6, 7, 9,
+1, 6, 2, 4, 8, 3, 7, 9, 5,
+4, 5, 3, 7, 9, 6, 2, 1, 8,
+7, 8, 9, 1, 5, 2, 4, 6, 3,
+3, 9, 4, 8, 1, 7, 5, 2, 6,
+8, 2, 7, 3, 6, 5, 9, 4, 1,
+6, 1, 5, 9, 2, 4, 3, 8, 7
+]
+
+TEST_PUZZLE = [
+9, 4, 6, 5 ,7, 8, 1, 3, 2,
+2, 7, 1, 6, 3, 9, 8, 5, 4,
+5, 3, 8, 2, 4, 1, 6, 7, 9,
+1, 6, 2, 4, 8, 3, 7, 9, 5,
+4, 5, 3, 7, 9, 6, 2, 1, 8,
+7, 8, 9, 1, 5, 2, 4, 6, 3,
+3, 9, 4, 8, 1, 7, 5, 2, 6,
+8, 2, 7, 3, 6, 5, 9, 4, 1,
+6, 1, 5, 9, 2, 4, 3, 8, 7
+]
+
 currBoard = Board()
 prevBoard = currBoard
 
@@ -484,6 +619,10 @@ currBoard.print_board()
 print("\nSolving")
 currBoard.solve_upto_guarenteed()
 
+#Do corrections (swaps) until the board is valid
+currBoard.correct(SOLVED_PUZZLE)
+
+'''
 while(not currBoard.is_valid_board()):
     print("Guessing")
 
@@ -493,9 +632,8 @@ while(not currBoard.is_valid_board()):
 
     #Solve until we have to guess
     currBoard.solve_upto_guarenteed()
+'''
 
-    #If we werent able to solve it
-    if
-
-print("\nSolved Board")
+#print("\nSolved Board")
 currBoard.print_board()
+currBoard.print_board_detailed()
