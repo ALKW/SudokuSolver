@@ -359,14 +359,27 @@ class Board:
             return False
 
     def correct(self, solved_puzzle):
+        '''
+        Changes around the solved board so that the numbers in the known cells (in the solved board) 
+        align with the board we are currently trying to solve
+        Args:
+            solved_puzzle(list(int)) - The solved puzzle we will morph into our solution
+        Returns:
+            None
+        Raises:
+            None
+        '''
         #Morph the solved solution to what we currently have
         solved_puzzle = self.morph_solved_init(solved_puzzle)
 
         #make sure the number line up with the possible values
         solved_puzzle = self.morph_solved_poss_values(solved_puzzle)
 
-        #Find errors and swap them
-        
+        #Find errors in rows and swap them when another row has a corresponding error. Do not rearrange boxes
+        solved_puzzle = self.morph_solved_fix_rows(solved_puzzle)
+
+        #Find errors in columns and swap them when another column has a corresponding error
+        #solved_puzzle = self.morph_solved_fix_columns(solved_puzzle)
 
         #Print details to user
         print("Morphed:")
@@ -421,6 +434,187 @@ class Board:
                             solved_puzzle[swap_position] = solved_puzzle[position]
                             solved_puzzle[position] = temp
                             break
+
+        return solved_puzzle
+
+    def morph_solved_fix_rows(self, solved_puzzle):
+        #For each row on the board find what values are missing by marking off values once theyve been seen
+        missing = [[1, 2, 3, 4, 5, 6, 7, 8, 9] for y in range(9)]
+
+        #For each row on the board find what values are duplicated by appending the row to the list then removing any duplicates
+        #This list contains all the duplicates, so to solve the board overtime this list would empty. Can contain duplicates
+        mult_values = [[] for x in range(9)]
+
+        solved_rows = [solved_puzzle[0:9], solved_puzzle[9:18], solved_puzzle[18:27], solved_puzzle[27:36], solved_puzzle[36:45],
+        solved_puzzle[45:54], solved_puzzle[54:63], solved_puzzle[63:72], solved_puzzle[72:81]]
+
+        #Keep track of each row
+        row_index = 0
+
+        #For each row on the board
+        for row in solved_rows:
+            #For each entry in the row determine if its a duplicate
+            for entry in row:
+                try:
+                    #If the entry is in the set still, then this is the first time weve seen it
+                    missing[row_index].remove(entry)
+                except: 
+                    #Else the entry is not in the set and this is not the first time weve seen it, therefore its a duplicate
+                    mult_values[row_index].append(entry)
+
+            #Move to the next row
+            row_index += 1
+
+        #Sort each mult values array
+        for row in mult_values:
+            row.sort()
+
+        #----------------PRINT------------------
+        row_index = 0
+        for row in missing:
+
+            print("Missing in row", row_index + 1, ": ", end="")
+            for entry in row:
+                print(entry, " ", end="")
+
+            print()
+            row_index += 1
+        print()
+
+        row_index = 0
+        for row in mult_values:
+            print("Duplicate in row", row_index + 1, ": ", end="")
+            for entry in row:
+                print(entry, " ", end="")
+            
+            print()
+            row_index += 1
+
+        print()
+        #------------------END_PRINT-------------------
+
+        
+        #For each row in the mult value array
+        for mult_row_index in range(len(mult_values)):
+            #For each duplicate entry in the row
+            for mult_entry in mult_values[mult_row_index]:
+                #Go through the solved board and find the first instance of the duplicate variable
+                for mult_entry_index in range(len(solved_rows[mult_row_index])):
+                    #Once weve found the row_entry in the solved_board and the corresponding entry isnt a locked value
+                    if solved_rows[mult_row_index][mult_entry_index] == mult_entry and self.rows[mult_row_index][mult_entry_index].value == 0:
+                        #Get the row group that the duplicate element is in and get the square that it is in
+                        row_group_index = mult_row_index % 3
+                        square_index = mult_row_index % 3 + mult_entry_index // 3
+                        print(mult_row_index, mult_entry_index, mult_entry)
+                        print(row_group_index, square_index)
+
+                        #Find the entry in the missing list, to know which row the duplicate should be swapped to
+                        for miss_row_index in range(row_group_index, row_group_index + 3):
+                            #If we find a valid swap then swap and move onto the next value
+                            if mult_entry in missing[miss_row_index] and missing[miss_row_index].index(mult_entry) :
+                                #swap the values
+
+                                #tell the for loop one level up that we want to move onto the next value
+                            #If we dont find a valid swap then move onto the next instance of the duplicate
+                            else:
+
+                        break
+        '''
+
+        diff = list()
+
+        #Go by groups of 3 rows and make sure that the groups of 3 have the same sub groups 
+        #Sub groups do not have to be in the same order
+        for row_group_last_index in range(3, 10, 3):
+            #Used for indexing each row group
+            row_group_base_index = row_group_last_index - 3
+            row_group_diff = list()
+
+            #Check to make sure each sub group is in the other array's row group
+            for row_index in range(row_group_base_index, row_group_last_index):
+                #if the row is not in the others row group, then copy it to the diff list of arrays
+                if mult_values[row_index] not in missing[row_group_base_index:row_group_last_index]:
+                    row_group_diff.append(row_index)
+
+            #Keep track of the differences in rows
+            diff.append(row_group_diff)
+
+        
+        #for each row group, swap values in the subgroups, till the subgroups are the same
+        for row_group in diff:
+            #For each row within the row group
+            for row_index in row_group:
+                #For each entry in that row in the mult values array
+                for entry_index in range(len(mult_values[row_index])):
+                    #cycle through the other rows and swap the value
+                    for other_row_index in row_group:
+                        #If its the same row, dont compare
+                        if other_row_index == row_index:
+                            continue
+                        #Else, test by swaping with all other values in the row
+                        else:
+                            for other_entry_index in range(len(mult_values[other_row_index])):
+                                #Swap the values
+                                temp = mult_values[row_index][entry_index]
+                                mult_values[row_index][entry_index] = mult_values[other_row_index][other_entry_index] 
+                                mult_values[other_row_index][other_entry_index]  = temp
+
+                                #test to see if the swap improved anything
+        '''
+
+        return solved_puzzle
+
+
+    def morph_solved_fix_columns(self, solved_puzzle):
+        #For each row on the board find what values are missing by marking off values once theyve been seen
+        missing = [set([1, 2, 3, 4, 5, 6, 7, 8, 9]) for y in range(9)]
+
+        #For each row on the board find what values are duplicated by appending the row to the list then removing any duplicates
+        #This list contains all the duplicates, so to solve the board overtime this list would empty. Can contain duplicates
+        mult_values = [[] for x in range(9)]
+
+        solved_columns = [solved_puzzle[::9], solved_puzzle[1::9], solved_puzzle[2::9], solved_puzzle[3::9], 
+        solved_puzzle[4::9], solved_puzzle[5::9], solved_puzzle[6::9], solved_puzzle[7::9], solved_puzzle[8::9]]
+
+        #Keep track of which column we are in
+        col_index = 0
+
+        #For each row on the board
+        for col in solved_columns:
+            #For each entry in the row determine if its a duplicate
+            for entry in col:
+                try:
+                    #If the entry is in the set still, then this is the first time weve seen it
+                    missing[col_index].remove(entry)
+                except: 
+                    #Else the entry is not in the set and this is not the first time weve seen it, therefore its a duplicate
+                    mult_values[col_index].append(entry)
+
+            #Move to the next row
+            col_index += 1
+
+
+        col_index = 0
+        for col in missing:
+            print("Missing in column", col_index + 1, ": ", end="")
+            for entry in col:
+                print(entry, " ", end="")
+
+            print()
+            col_index += 1
+
+        print()
+
+        col_index = 0
+        for col in mult_values:
+            print("Duplicate in column", col_index + 1, ": ", end="")
+            for entry in col:
+                print(entry, " ", end="")
+
+            print()
+            col_index += 1
+
+        print()
 
         return solved_puzzle
 
