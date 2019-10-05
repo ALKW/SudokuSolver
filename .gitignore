@@ -331,3 +331,9 @@ ASALocalRun/
 
 #Mac Stuff
 .DS_Store
+
+#VSCODE
+.vscode/*
+
+# Python
+__pycahce__/
