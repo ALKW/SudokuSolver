@@ -46,6 +46,8 @@ class Sudoentry:
         print("Row: ", self.row)
         print("Column: ", self.column)
 
+
+
 class Sudosquare:
     def __init__(self, listToCopy, indices):
         '''
@@ -99,6 +101,8 @@ class Sudosquare:
         for entry in self.square[6:]:
             print(entry.poss_values, "  ", end="")
         print("\n")
+
+
 
 class Board:
     def __init__(self):
@@ -358,6 +362,63 @@ class Board:
         else:
             return False
 
+    def is_valid(self, value, sq_index, entry_index):
+        '''
+        Determines if a value is able to be added to the possible value list of an entry
+        by seeing if it is already in the row or column
+        Args:
+            value (int) - the value in question on whether or not it should be added
+            sq_index (int) - index of the square in the squares list that contains the entry we are checking
+            entry_index (int) - index of the entry within the square that we are investigating
+        Returns:
+            None
+        Raises:
+            None
+        '''
+        entry = self.sudosquares[sq_index].square[entry_index]
+        #Check if the value is in the same column already
+        for sudoentry in self.columns[entry.column]:
+            if value == sudoentry.value:
+                return False
+        #Check if the value is in the same row already
+        for sudoentry in self.rows[entry.row]:
+            if value == sudoentry.value:
+                return False
+        #Check if the value is in the same square already
+        for sudoentry in self.sudosquares[sq_index].square:
+            if value == sudoentry.value:
+                return False
+        return True
+
+    def write_if_possible(self):
+        '''
+        Runs through every Sudoentry on the board and determines if it has no value 
+        and that its possible values list has length 1
+        Args:
+            None
+        Returns:
+            Boolean - True if an entry was written to
+                      False if no entry was written to
+        Raises:
+            None
+        '''
+        beenUpdated = False
+        #Runs through all entries in the list
+        for entry_index in range(len(self.board)):
+            #if there is only 1 possible value for that entry and the entry does not have a value in it aleady, then assign it to it
+            if self.board[entry_index].value == 0 and len(self.board[entry_index].poss_values) == 1:
+                value_to_add = self.board[entry_index].poss_values.pop()
+                self.board[entry_index].value = value_to_add
+                self.board[entry_index].poss_values.add(value_to_add)
+                beenUpdated = True
+        self.update_board_pieces_from_board()
+        return beenUpdated
+
+
+
+    ########################################
+    ######    Recursive NP Solving    ######
+    ########################################
     def correct(self, solved_puzzle):
         '''
         Changes around the solved board so that the numbers in the known cells (in the solved board) 
@@ -513,10 +574,11 @@ class Board:
                             #If we find a valid swap then swap and move onto the next value
                             if mult_entry in missing[miss_row_index] and missing[miss_row_index].index(mult_entry) :
                                 #swap the values
-
-                                #tell the for loop one level up that we want to move onto the next value
+                                pass
+                            #tell the for loop one level up that we want to move onto the next value
                             #If we dont find a valid swap then move onto the next instance of the duplicate
                             else:
+                                pass
 
                         break
         '''
@@ -618,61 +680,15 @@ class Board:
 
         return solved_puzzle
 
-    def is_valid(self, value, sq_index, entry_index):
-        '''
-        Determines if a value is able to be added to the possible value list of an entry
-        by seeing if it is already in the row or column
-        Args:
-            value (int) - the value in question on whether or not it should be added
-            sq_index (int) - index of the square in the squares list that contains the entry we are checking
-            entry_index (int) - index of the entry within the square that we are investigating
-        Returns:
-            None
-        Raises:
-            None
-        '''
-        entry = self.sudosquares[sq_index].square[entry_index]
-        #Check if the value is in the same column already
-        for sudoentry in self.columns[entry.column]:
-            if value == sudoentry.value:
-                return False
-        #Check if the value is in the same row already
-        for sudoentry in self.rows[entry.row]:
-            if value == sudoentry.value:
-                return False
-        #Check if the value is in the same square already
-        for sudoentry in self.sudosquares[sq_index].square:
-            if value == sudoentry.value:
-                return False
-        return True
 
-    def write_if_possible(self):
-        '''
-        Runs through every Sudoentry on the board and determines if it has no value 
-        and that its possible values list has length 1
-        Args:
-            None
-        Returns:
-            Boolean - True if an entry was written to
-                      False if no entry was written to
-        Raises:
-            None
-        '''
-        beenUpdated = False
-        #Runs through all entries in the list
-        for entry_index in range(len(self.board)):
-            #if there is only 1 possible value for that entry and the entry does not have a value in it aleady, then assign it to it
-            if self.board[entry_index].value == 0 and len(self.board[entry_index].poss_values) == 1:
-                value_to_add = self.board[entry_index].poss_values.pop()
-                self.board[entry_index].value = value_to_add
-                self.board[entry_index].poss_values.add(value_to_add)
-                beenUpdated = True
-        self.update_board_pieces_from_board()
-        return beenUpdated
 
+    #####################################
+    #########     PRINTING     ##########
+    #####################################
     def print_board(self):
         '''
-        Formats and prints the contents of the board 
+        Prints each entry depending on if it has a value or not
+        Prints it in the standard format of a sudoku board
         Args:
             None
         Raises:
@@ -709,23 +725,51 @@ class Board:
         count = 1
         self.fix_board()
 
+        # For every entry on the board print its possible values or its actual value if it has one
         for entry in self.board:
+            # No value has been chosen for this square so print all possible values
             if entry.value == 0:
+                # Print 9 regardless of how many numbers are actually possible for formatting reasons
                 print("(", end="")
-                for value in entry.poss_values:
-                    print(value, " ", end="")  
-                print(") ", end="")
+                for value in range(1,10):
+                    if value in entry.poss_values:
+                        print(value, "", end="")
+                    else:
+                        print("_ ", end="")
+                print(")", end="")
+
+            # Print the value that belongs and fill the rest with spaces
             else:  
-                print(entry.value, " ", end="")
+                # Print 9 spaces for formatting reasons. Use brackets to indicate that a value has been chosen for this position
+                print("[", end="")
+                for i in range(1,10):
+                    if i == entry.value:
+                        print(i, "", end="")
+                    else:
+                        print("_ ", end="")
+                print("]", end="")
+
+            # Used for making new columns
             if count % 3 == 0:
-                print(" \t\t|| ", end="")
+                print("\t", end="")
+            # Used for making new rows
             if count % 9 == 0:
                 print()
+            # Used for printing a new line after 3 rows to indicate a box (9 spaces 3x3)
             if count % 27 == 0:
                 print("")
             count += 1
 
 def print_matrix_as_board(puzzle):
+    '''
+    Takes in a matrix and prints it as a sudoku board, properly formatted
+    Args:
+        puzzle - list(ints)
+    Raises:
+        None
+    Returns:
+        None
+    '''
     count = 1
     for entry in puzzle:
         if entry == 0:
@@ -814,7 +858,7 @@ print("\nSolving")
 currBoard.solve_upto_guarenteed()
 
 #Do corrections (swaps) until the board is valid
-currBoard.correct(SOLVED_PUZZLE)
+#currBoard.correct(SOLVED_PUZZLE)
 
 '''
 while(not currBoard.is_valid_board()):
