@@ -1,108 +1,4 @@
-class Sudoentry:
-    def __init__(self, value, row, column):
-        '''
-        Each square on the board is one of these objects.  
-        Members:
-            poss_values (set) - All the possible values that could fill the square. 
-            If there is one value then that value fills the square and the list becomes empty
-            value (int) - the actual value in the square
-            row (int) - value of the row the entry is in
-            column (int) - value of the column the entry is in
-        '''
-        self.poss_values = set([1,2,3,4,5,6,7,8,9])
-        self.value = value
-        self.row = row
-        self.column = column
-
-    def set_value(self, value):
-        '''
-        Sets the value member of the object.  
-        Args:
-            value (int) - value to be set
-        Returns:
-            None
-        Raises:
-            TypeError - If a value other than an int is put in, it returns invalid and retains the previous entry
-        '''
-        INT_TYPE = type(1)
-
-        if type(value) == INT_TYPE:
-            self.value = value
-        else:
-            raise TypeError("Invalid Type")
-
-    def print(self):
-        '''
-        Prints out the contents of the object.  
-        Args:
-            None
-        Returns:
-            None
-        Raises:
-            None
-        '''
-        print("Value: ", self.value)
-        print("Possible values: ", self.poss_values)
-        print("Row: ", self.row)
-        print("Column: ", self.column)
-
-
-
-class Sudosquare:
-    def __init__(self, listToCopy, indices):
-        '''
-        Defines a square on the board and contains a list of the 9 sudoentries within the square.  
-        Members:
-            square (list - (Sudoentries)) - contains the Sudoentry objects 
-            indices (list - (int)) - indices of each entry relative to the board
-        '''
-        self.square = listToCopy
-        self.indices = indices
-
-    def check_valid(self):
-        '''
-        Checks if the square has a unique set of elements; no duplicates.  
-        Args:
-            None
-        Returns:
-            Boolean - True if there are no duplicates
-                      False if there are duplicates
-        Raises:
-            None
-        '''
-        seen = set()
-        for entry in self.square:
-            if entry.value in seen:
-                return False
-            else:
-                seen.add(entry.value)
-
-    def print(self): 
-        '''
-        Formats and prints the contents of the Sudosquare object.  
-        Args:
-            None
-        Raises:
-            None
-        Returns:
-            None
-        '''
-        #prints the first row
-        for entry in self.square[:3]:
-            print(entry.poss_values, "  ", end="")
-        print()
-
-        #prints the second row
-        for entry in self.square[3:6]:
-            print(entry.poss_values, "  ", end="")
-        print()
-
-        #prints the third row
-        for entry in self.square[6:]:
-            print(entry.poss_values, "  ", end="")
-        print("\n")
-
-
+from sudoku import Sudoentry, Sudosquare
 
 class Board:
     def __init__(self):
@@ -122,8 +18,77 @@ class Board:
         '''
         self.board = [Sudoentry(x * 0, (x // 9) % 9, x % 9) for x in range(81)]
         self.update_board_pieces_from_board()
+
+    #################################################
+    ################# Main Function #################
+    #################################################
+    def solve(self):
+        '''
+        Solve the board by filling in until you need to guess, then guess, then repeat.
+        Args:
+            None
+        Returns:
+            Boolean - true if the board has been filled in completely and is valid, false otherwise
+        Raises:
+            None
+        '''
+        # Check if the board is valid, if so return true
+        if self.is_complete_board():
+            return True
+        # If the board is invalid return false as we filled in something we shoudln't have
+        elif not self.is_valid():
+            return False
+
+        # Do a loop of filling in until we have to guess, follow up with a guess, then recursively call itself
+        self.solve_upto_guarenteed()
+
+        guess = self.guess()
+
+        result = self.solve()
+
+        # If we get a complete and valid board back we are done, propagate up the stack
+        if result == True:
+            return True
+        # Otherwise we put an invalid guess down and need to invalidate that guess for this level of the stack frame
+        else:
+
+
+
         
+    #######################################################
+    ################## Helper Functions ###################
+    #######################################################
+    def is_complete_board(self):
+        '''
+        Determines if a board is filled in completely and is valid by checking the rules of sudoku
+        Args:
+            None
+        Returns:
+            Boolean - true if the board is valid, false otherwise
+        Raises:
+            None
+        '''
+        # Check if the board is valid
+        if not self.is_valid_board():
+            return False
+
+        # Check if the baord is completely filled in
+        for entry in self.board:
+            if entry.value = 0:
+                return False
+            
+        return True
+
     def is_valid_board(self):
+        '''
+        Determines if a board is valid or not by checking the rules of sudoku
+        Args:
+            None
+        Returns:
+            Boolean - true if the board is valid, false otherwise
+        Raises:
+            None
+        '''
         added = set()
         for column in self.columns:
             added = set()
@@ -132,6 +97,7 @@ class Board:
                     print("Invalid Board. Duplicate in column: ", self.columns.index(column))
                     return False
                 added.add(entry.value)
+
         for row in self.rows:
             added = set()
             for entry in row:
@@ -151,6 +117,42 @@ class Board:
         print("Valid Board")
         return True
 
+    def copy_board_from(self, toCopy):
+        '''
+        Copies a list of ints to a board object by creating a Sudoentry object for every int.
+        If an entry has a wrong type, it assigns the value 0 to the associated Sudoentry object.  
+        Args:
+            toCopy (list) - integer list of size 81
+        Returns:
+            None
+        Raises:
+            Length Error - Invalid Matrix to copy from
+        '''
+        INT_TYPE = type(1)
+        #If the length is wrong, the raise an error and dont copy board
+        if len(toCopy) != len(self.board):
+            print("Invalid matrix to copy from")
+            print("Requires matrix of length 61; given matrix of length ", len(toCopy))
+        else:
+            #Builds a Sudoentry object for each entry in the toCopy list
+            for index in range(len(toCopy)):
+                if type(toCopy[index]) != INT_TYPE:
+                    self.board[index].value = 0
+                else:
+                    self.board[index].value = toCopy[index]
+                    if toCopy[index] != 0:
+                        self.board[index].poss_values = set([toCopy[index]])
+                    else:
+                        self.board[index].poss_values = set()
+                    
+    def clear_sets(self):
+        for entry_index in range(len(self.board)):
+            if self.board[entry_index].value == 0:
+                self.board[entry_index].poss_values = set()
+
+    ##################################################################
+    ################### Data Structure Maintenance ###################
+    ##################################################################
     def update_board_pieces_from_board(self):
         '''
         Updates all the squares, columns, and rows lists based on the current board. As well as updates all possible value sets in board
@@ -231,63 +233,10 @@ class Board:
         #Updates the various lists associated with the board object
         self.update_board_pieces_from_board()
 
-    def clear_sets(self):
-        for entry_index in range(len(self.board)):
-            if self.board[entry_index].value == 0:
-                self.board[entry_index].poss_values = set()
 
-    def copy_board_from(self, toCopy):
-        '''
-        Copies a list of ints to a board object by creating a Sudoentry object for every int.
-        If an entry has a wrong type, it assigns the value 0 to the associated Sudoentry object.  
-        Args:
-            toCopy (list) - integer list of size 81
-        Returns:
-            None
-        Raises:
-            Length Error - Invalid Matrix to copy from
-
-        '''
-        INT_TYPE = type(1)
-        #If the length is wrong, the raise an error and dont copy board
-        if len(toCopy) != len(self.board):
-            print("Invalid matrix to copy from")
-            print("Requires matrix of length 61; given matrix of length ", len(toCopy))
-        else:
-            #Builds a Sudoentry object for each entry in the toCopy list
-            for index in range(len(toCopy)):
-                if type(toCopy[index]) != INT_TYPE:
-                    self.board[index].value = 0
-                else:
-                    self.board[index].value = toCopy[index]
-                    if toCopy[index] != 0:
-                        self.board[index].poss_values = set([toCopy[index]])
-                    else:
-                        self.board[index].poss_values = set()
-
-    def guess(self):
-        '''
-        Fills in a spot randomly with a number that is valid.
-        Args:
-            None
-        Raises:
-            None
-        Returns:
-            None
-        '''
-        #for each square in a board
-        for square_index in range(len(self.sudosquares)):
-            #Find the next square that supports a valid entry
-            for entry in self.sudosquares[square_index].square:
-                #If a square has a possible value, set it to that value
-                for pos in entry.poss_values:
-                    if pos == entry.value:
-                        continue
-                    print(entry.value)
-                    entry.value = pos
-                    self.update_board_pieces_from_board()
-                    return
-
+    ####################################################
+    ########### Basic Deterministic Guessing ###########
+    ####################################################
     def solve_upto_guarenteed(self):
         '''
         Solves upto the point that a number is guarenteed to go into a position based on the current board
@@ -319,7 +268,39 @@ class Board:
         if was_updated or updated_during_filling:
             #Recursively call the function again. On return the calling function terminates
             self.solve_upto_guarenteed()
+
+    def guess(self, possible_values=None):
+        '''
+        Fills in a spot randomly with a number that is valid.
+        Args:
+            None
+        Raises:
+            None
+        Returns:
+            None
+        '''
+        # If a possible values list was provided, then use that
+        if possible_values != None:
+            pass
+        # Otherwise use the built in one
+        else:
+            pass
+
         
+        #for each square in a board
+        for square_index in range(len(self.sudosquares)):
+            #Find the next square that supports a valid entry
+            for entry in self.sudosquares[square_index].square:
+                #If a square has a possible value, set it to that value
+                for pos in entry.poss_values:
+                    if pos == entry.value:
+                        continue
+                    print(entry.value)
+                    entry.value = pos
+                    self.update_board_pieces_from_board()
+                    return (square_index, entry.value)
+
+        return (0, 0)
 
     def fill_in_poss_value(self, sq_index, value):
         '''
@@ -349,7 +330,7 @@ class Board:
                 continue
             #else determine if the number can go there and if so, add that number to the possible values list
             else:
-                if self.is_valid(value, sq_index, entry_index):
+                if self.is_valid_value(value, sq_index, entry_index):
                     added.append(entry_index)
                     self.sudosquares[sq_index].square[entry_index].poss_values.add(value)
 
@@ -362,7 +343,7 @@ class Board:
         else:
             return False
 
-    def is_valid(self, value, sq_index, entry_index):
+    def is_valid_value(self, value, sq_index, entry_index):
         '''
         Determines if a value is able to be added to the possible value list of an entry
         by seeing if it is already in the row or column
@@ -414,11 +395,16 @@ class Board:
         self.update_board_pieces_from_board()
         return beenUpdated
 
+    ######################################################
+    #############    Recursive NP Solving    #############
+    ######################################################
+
+    
 
 
-    ########################################
-    ######    Recursive NP Solving    ######
-    ########################################
+    ###################################################
+    ############    Special NP Solving    #############
+    ###################################################
     def correct(self, solved_puzzle):
         '''
         Changes around the solved board so that the numbers in the known cells (in the solved board) 
@@ -681,7 +667,6 @@ class Board:
         return solved_puzzle
 
 
-
     #####################################
     #########     PRINTING     ##########
     #####################################
@@ -845,33 +830,18 @@ TEST_PUZZLE = [
 6, 1, 5, 9, 2, 4, 3, 8, 7
 ]
 
-currBoard = Board()
-prevBoard = currBoard
+curr_board = Board()
+prevBoard = curr_board
 
-currBoard.copy_board_from(HARD_PUZZLE)
+curr_board.copy_board_from(HARD_PUZZLE)
 
 print("Initial Board")
-currBoard.print_board()
+curr_board.print_board()
 
 #Solve until we have to guess
 print("\nSolving")
-currBoard.solve_upto_guarenteed()
+curr_board.solve()
 
-#Do corrections (swaps) until the board is valid
-#currBoard.correct(SOLVED_PUZZLE)
-
-'''
-while(not currBoard.is_valid_board()):
-    print("Guessing")
-
-    #Guess the next spot to print
-    prevBoard = currBoard
-    currBoard.guess()
-
-    #Solve until we have to guess
-    currBoard.solve_upto_guarenteed()
-'''
-
-#print("\nSolved Board")
-currBoard.print_board()
-currBoard.print_board_detailed()
+print("\nSolved Board")
+curr_board.print_board()
+curr_board.print_board_detailed()
